@@ -35,7 +35,6 @@ Thumbs.db
 
 # IDE
 .idea/
-.vscode/
 .qodo/
 *.swp
 *.swo

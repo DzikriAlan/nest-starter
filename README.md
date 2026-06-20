@@ -133,7 +133,7 @@ src/
     └── utils/                  # hashPassword, comparePassword, excludeFields
 ```
 
-Lihat [CLAUDE.md](./CLAUDE.md) untuk panduan arsitektur lengkap dan konvensi penamaan.
+Lihat [CODE.md](./CODE.md) untuk panduan arsitektur lengkap dan konvensi penamaan.
 
 ---
 
