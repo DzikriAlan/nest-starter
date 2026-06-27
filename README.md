@@ -1,186 +1,229 @@
 # NestJS Starter
 
-Production-ready NestJS starter dengan arsitektur berlapis: Repository → Service → Controller, dilengkapi JWT auth, Prisma ORM, Swagger docs, dan test suite lengkap.
+Production-ready template for building scalable backend APIs with NestJS, TypeScript, Prisma ORM, JWT Authentication, and PostgreSQL.
 
-## Tech Stack
+## 🎯 Overview
 
-| Concern | Package |
-|---|---|
-| Framework | NestJS 10.x |
-| Language | TypeScript |
-| ORM | Prisma (PostgreSQL) |
-| Auth | JWT (`@nestjs/passport` + `passport-jwt`) |
-| Validation | `class-validator` + `class-transformer` |
-| Docs | Swagger (`@nestjs/swagger`) |
-| Testing | Jest + Supertest |
+**NestJS Starter** is a comprehensive backend template that implements enterprise-grade architecture and best practices:
+- **Framework**: NestJS 10.x with layered architecture (Repository → Service → Controller)
+- **Language**: TypeScript for type safety and enhanced developer experience
+- **Database**: Prisma ORM + PostgreSQL for robust data management
+- **Authentication**: JWT + Passport for secure API endpoints
+- **Validation**: class-validator + class-transformer for input validation
+- **Documentation**: Swagger UI for interactive API documentation
+- **Testing**: Jest + Supertest for comprehensive test coverage
+
+Use this starter for:
+- Production-ready REST API backends
+- Microservices architecture foundation
+- Teams wanting NestJS best practices built-in
 
 ---
 
-## Quick Start
+## 📚 Tech Stack
 
-### Prasyarat
+| Concern | Package |
+|---------|---------|
+| Framework | NestJS 10.x |
+| Language | TypeScript |
+| ORM | Prisma |
+| Database Driver | PostgreSQL (pg) |
+| Authentication | JWT + @nestjs/passport + passport-jwt |
+| Validation | class-validator + class-transformer |
+| API Documentation | @nestjs/swagger |
+| Testing | Jest + Supertest |
+| Node Version | v20+ |
 
-- [Node.js](https://nodejs.org) v20+
-- [Docker](https://www.docker.com) (untuk PostgreSQL lokal)
+---
 
-### 1. Clone & install
+## 📋 Prerequisites
+
+- **Node.js**: v20 or higher
+- **npm**: v10+ or yarn/pnpm
+- **PostgreSQL**: v12+ (local or cloud)
+- **Docker**: for running PostgreSQL locally (optional)
+- **Git**: for version control
+
+---
+
+## 🚀 Quick Start
+
+### 1. Clone Repository
 
 ```bash
-git clone <repo-url>
+git clone <repository-url>
 cd nest-starter
+```
+
+### 2. Install Dependencies
+
+```bash
 npm install
 ```
 
-### 2. Setup environment
+### 3. Setup Environment
+
+Copy environment example file:
 
 ```bash
 cp .env.example .env
 ```
 
-File `.env` sudah siap dipakai untuk development lokal tanpa perlu diubah.
+The `.env` file is ready for local development without requiring modifications.
 
-### 3. Jalankan database
+### 4. Run Database (with Docker)
 
 ```bash
 docker-compose up -d
 ```
 
-### 4. Jalankan migrasi database
+If not using Docker, ensure PostgreSQL is running and update `DATABASE_URL` in `.env`.
+
+### 5. Run Database Migrations
 
 ```bash
 npm run db:migrate
 ```
 
-### 5. Jalankan aplikasi
+---
+
+## 💻 Available Scripts
+
+| Script | Description |
+|--------|-------------|
+| `npm run start:dev` | Start development server with hot-reload |
+| `npm run start:prod` | Start production server |
+| `npm run build` | Compile TypeScript to JavaScript |
+| `npm run test` | Run unit & integration tests |
+| `npm run test:e2e` | Run end-to-end tests |
+| `npm run lint` | Run ESLint & fix issues |
+| `npm run db:migrate` | Run Prisma migrations |
+| `npm run db:push` | Push schema without migration (prototyping) |
+| `npm run db:studio` | Open Prisma Studio (database GUI) |
+
+### 6. Start Development Server
+
+After running migrations, start the development server:
 
 ```bash
 npm run start:dev
 ```
 
-Aplikasi berjalan di **http://localhost:3000**
-
-| URL | Deskripsi |
-|---|---|
-| `http://localhost:3000/api/v1` | Base API |
-| `http://localhost:3000/api/docs` | Swagger UI |
+The application will run at:
+- **API Base**: http://localhost:3000/api/v1
+- **Swagger Docs**: http://localhost:3000/api/docs
 
 ---
 
-## Endpoints
-
-### Auth (public)
-
-| Method | URL | Deskripsi |
-|---|---|---|
-| POST | `/api/v1/auth/register` | Daftar akun baru |
-| POST | `/api/v1/auth/login` | Login, mendapatkan JWT |
-| GET | `/api/v1/auth/me` | Profil user yang sedang login |
-
-### Users (JWT required)
-
-| Method | URL | Deskripsi |
-|---|---|---|
-| GET | `/api/v1/users` | List semua user |
-| GET | `/api/v1/users/:id` | Detail user |
-| POST | `/api/v1/users` | Buat user baru |
-| PATCH | `/api/v1/users/:id` | Update user |
-| DELETE | `/api/v1/users/:id` | Hapus user |
-
----
-
-## Scripts
-
-```bash
-npm run start:dev      # Development dengan hot-reload
-npm run start:prod     # Production
-npm run build          # Compile TypeScript
-npm run test           # Unit & controller tests
-npm run test:e2e       # E2E tests
-npm run lint           # Lint & auto-fix
-npm run db:migrate     # Jalankan migrasi Prisma
-npm run db:push        # Push schema tanpa migrasi (prototyping)
-npm run db:studio      # Buka Prisma Studio (GUI database)
-```
-
----
-
-## Struktur Project
+## 📁 Project Structure
 
 ```
 src/
 ├── features/
-│   ├── auth/                   # Authentication (login, register, me)
-│   │   ├── controllers/
-│   │   ├── dto/
-│   │   ├── entities/
-│   │   ├── repositories/
-│   │   ├── services/
-│   │   ├── strategies/         # JWT Passport strategy
+│   ├── auth/                      # Authentication module
+│   │   ├── controllers/           # Auth endpoints
+│   │   ├── dto/                   # Request/Response DTOs
+│   │   ├── entities/              # Auth entity
+│   │   ├── repositories/          # Data access layer
+│   │   ├── services/              # Business logic
+│   │   ├── strategies/            # JWT Passport strategy
 │   │   └── auth.module.ts
-│   └── users/                  # User management CRUD
-│       ├── controllers/
-│       ├── dto/
-│       ├── entities/
-│       ├── repositories/
-│       ├── services/
+│   └── users/                     # User management module
+│       ├── controllers/           # User CRUD endpoints
+│       ├── dto/                   # User DTOs
+│       ├── entities/              # User entity
+│       ├── repositories/          # Data access layer
+│       ├── services/              # Business logic
 │       └── users.module.ts
-└── shared/
-    ├── prisma/                 # PrismaService singleton
-    ├── guards/                 # JwtAuthGuard
-    ├── decorators/             # @CurrentUser()
-    ├── filters/                # HttpExceptionFilter
-    ├── interceptors/           # TransformInterceptor (response wrapper)
-    └── utils/                  # hashPassword, comparePassword, excludeFields
-```
-
-Lihat [CODE.md](./CODE.md) untuk panduan arsitektur lengkap dan konvensi penamaan.
-
----
-
-## Menambah Feature Baru
-
-Ikuti pola dari URL endpoint:
-
-```
-URL: /api/v1/products
-  → folder-name : products
-  → filename    : products
-  → ResourceName: Products
-```
-
-Buat file berikut:
-
-```
-src/features/products/
-├── dto/products.dto.ts
-├── entities/products.entity.ts
-├── repositories/products.repository.ts
-├── services/products.service.ts
-├── controllers/products.controller.ts
-└── products.module.ts
-```
-
-Daftarkan module di [app.module.ts](src/app.module.ts):
-
-```typescript
-import { ProductsModule } from './features/products/products.module'
-
-@Module({
-  imports: [..., ProductsModule],
-})
-export class AppModule {}
+├── shared/
+│   ├── prisma/                    # Prisma service singleton
+│   ├── guards/                    # JwtAuthGuard & other guards
+│   ├── decorators/                # @CurrentUser() & custom decorators
+│   ├── filters/                   # Global exception filters
+│   ├── interceptors/              # Response transform interceptor
+│   └── utils/                     # Helper functions
+└── app.module.ts                  # Root module
 ```
 
 ---
 
-## Response Format
+## 📚 API Endpoints
 
-Semua response dibungkus oleh `TransformInterceptor`:
+### Authentication (Public)
 
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/v1/auth/register` | Register new account |
+| POST | `/api/v1/auth/login` | Login & get JWT token |
+| GET | `/api/v1/auth/me` | Get current user profile |
+
+### Users (JWT Required)
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/v1/users` | List all users |
+| GET | `/api/v1/users/:id` | Get user by ID |
+| POST | `/api/v1/users` | Create new user |
+| PATCH | `/api/v1/users/:id` | Update user |
+| DELETE | `/api/v1/users/:id` | Delete user |
+
+---
+
+## 🏗️ Architecture Guide
+
+Complete documentation for architecture, naming conventions, and best practices is available in [CODE.md](./CODE.md).
+
+**Key Topics:**
+- Naming conventions (functions, files, folders)
+- Layer structure (Controllers → Services → Repositories)
+- NestJS module organization
+- Prisma ORM patterns
+- JWT authentication flow
+- Global exception handling
+- Response format standardization
+- Test patterns (unit, integration, e2e)
+
+---
+
+## 🔒 Response Format
+
+All responses are wrapped by `TransformInterceptor`:
+
+**Success Response:**
 ```json
-// Success
-{ "status": "success", "data": { ... } }
-
-// Error
-{ "status": "error", "statusCode": 400, "message": "...", "timestamp": "...", "path": "..." }
+{
+  "status": "success",
+  "data": { /* response data */ }
+}
 ```
+
+**Error Response:**
+```json
+{
+  "status": "error",
+  "statusCode": 400,
+  "message": "Error message",
+  "timestamp": "2024-01-01T00:00:00.000Z",
+  "path": "/api/v1/users"
+}
+```
+
+---
+
+## 🤝 Contributing
+
+1. Fork this repository
+2. Create a feature branch: `git checkout -b feature/your-feature-name`
+3. Commit your changes: `git commit -m 'feat: add your feature'`
+4. Push to the branch: `git push origin feature/your-feature-name`
+5. Open a Pull Request
+
+---
+
+## 📄 License
+
+MIT License - see [LICENSE](./LICENSE) file for details.
+
+---
+
+Developed by Dzikri Alan's Team
