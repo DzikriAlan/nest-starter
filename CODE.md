@@ -64,22 +64,65 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
 
 ### `transform.interceptor.ts` — Response Wrapper Global
 
-```typescript
-import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from '@nestjs/common'
-import { map } from 'rxjs/operators'
+Semua success response di-wrap dengan format standar JSON:
 
+```typescript
 @Injectable()
 export class TransformInterceptor implements NestInterceptor {
-  intercept(_: ExecutionContext, next: CallHandler) {
+  intercept(context: ExecutionContext, next: CallHandler) {
+    const response = context.switchToHttp().getResponse<Response>()
+    const statusCode = response.statusCode
+
     return next.handle().pipe(
       map((data) => ({
-        status: 'success',
+        success: true,
+        statusCode,
+        message: 'Success',
         data,
       })),
     )
   }
 }
 ```
+
+**Response shape (success):**
+```json
+{
+  "success": true,
+  "statusCode": 200,
+  "message": "Success",
+  "data": { ... }
+}
+```
+
+### `http-exception.filter.ts` — Error Response Standardization
+
+Semua error response menggunakan format JSON yang sama:
+
+**Response shape (error):**
+```json
+{
+  "success": false,
+  "statusCode": 400,
+  "message": "Bad Request",
+  "data": null,
+  "error": {
+    "code": "BAD_REQUEST",
+    "details": { "field": ["error message"] }
+  }
+}
+```
+
+**Error codes yang disupport:**
+- `BAD_REQUEST` (400) — validation error
+- `UNAUTHORIZED` (401) — missing/invalid auth
+- `FORBIDDEN` (403) — insufficient permissions
+- `NOT_FOUND` (404) — resource tidak ditemukan
+- `CONFLICT` (409) — duplicate/conflict
+- `UNPROCESSABLE_ENTITY` (422) — semantic error
+- `TOO_MANY_REQUESTS` (429) — rate limit
+- `INTERNAL_ERROR` (500) — server error
+- `SERVICE_UNAVAILABLE` (503) — dependency down
 
 ---
 
@@ -116,15 +159,16 @@ export class SharedModule {}
 
 | Prefix | Repository | Service | Controller | Utilisasi (private method) |
 |---|:---:|:---:|:---:|:---:|
-| `find` | ✅ | ❌ | ❌ | ✅ |
-| `create` | ✅ | ❌ | ❌ | ✅ |
+| `get` | ✅ | ❌ | ❌ | ✅ |
+| `post` | ✅ | ❌ | ❌ | ✅ |
 | `update` | ✅ | ❌ | ❌ | ✅ |
+| `patch` | ✅ | ❌ | ❌ | ✅ |
 | `delete` | ✅ | ❌ | ❌ | ✅ |
-| `get` | ❌ | ✅ | ❌ | ✅ |
-| `store` | ❌ | ✅ | ❌ | ✅ |
-| `change` | ❌ | ✅ | ❌ | ✅ |
-| `remove` | ❌ | ✅ | ❌ | ✅ |
-| `fetch` | ❌ | ❌ | ✅ | ❌ |
+| `fetch` | ❌ | ✅ | ❌ | ❌ |
+| `store` | ❌ | ✅ | ❌ | ❌ |
+| `change` | ❌ | ✅ | ❌ | ❌ |
+| `remove` | ❌ | ✅ | ❌ | ❌ |
+| `load` | ❌ | ❌ | ✅ | ❌ |
 | `save` | ❌ | ❌ | ✅ | ❌ |
 | `modify` | ❌ | ❌ | ✅ | ❌ |
 | `destroy` | ❌ | ❌ | ✅ | ❌ |
@@ -234,30 +278,40 @@ import type { Create{ResourceName}Dto, Update{ResourceName}Dto } from '../dto/{f
 export class {FileName}Repository {
   constructor(private readonly prisma: PrismaService) {}
 
-  // ✅ prefix find — untuk READ
-  async find{ResourceName}ById(id: string) {
+  // ✅ prefix get — untuk READ
+  async get{ResourceName}ById(id: string) {
     return this.prisma.{resource}.findUnique({ where: { id } })
   }
 
-  async find{ResourceName}Many(query: Query{ResourceName}Dto) {
+  async get{ResourceName}Many(query: Query{ResourceName}Dto) {
     return this.prisma.{resource}.findMany({
       where: { field: query.field },
     })
   }
 
-  // ✅ prefix create — untuk INSERT
-  async create{ResourceName}(dto: Create{ResourceName}Dto) {
+  // ✅ prefix post — untuk INSERT
+  async post{ResourceName}(dto: Create{ResourceName}Dto) {
     return this.prisma.{resource}.create({ data: dto })
   }
 
-  // ✅ prefix update — untuk UPDATE
+  // ✅ prefix update — untuk PUT (full replace)
   async update{ResourceName}(id: string, dto: Update{ResourceName}Dto) {
+    return this.prisma.{resource}.update({ where: { id }, data: dto })
+  }
+
+  // ✅ prefix patch — untuk PATCH (partial update)
+  async patch{ResourceName}(id: string, dto: Update{ResourceName}Dto) {
     return this.prisma.{resource}.update({ where: { id }, data: dto })
   }
 
   // ✅ prefix delete — untuk DELETE
   async delete{ResourceName}(id: string) {
     return this.prisma.{resource}.delete({ where: { id } })
+  }
+
+  // ✅ prefix utilisasi (private) — get/post/update/patch/delete di dalam class yang sama
+  private patch{ResourceName}Data(dto: Update{ResourceName}Dto) {
+    return { ...dto }
   }
 }
 ```
@@ -279,31 +333,31 @@ import type { Create{ResourceName}Dto, Update{ResourceName}Dto } from '../dto/{f
 export class {FileName}Service {
   constructor(private readonly {fileNameCamel}Repository: {FileName}Repository) {}
 
-  // ✅ prefix get — untuk READ
-  async get{ResourceName}(id: string) {
-    const data = await this.{fileNameCamel}Repository.find{ResourceName}ById(id)
+  // ✅ prefix fetch — untuk READ
+  async fetch{ResourceName}(id: string) {
+    const data = await this.{fileNameCamel}Repository.get{ResourceName}ById(id)
     if (!data) throw new NotFoundException('{ResourceName} not found')
     return data
   }
 
-  async get{ResourceName}List(query: Query{ResourceName}Dto) {
-    return this.{fileNameCamel}Repository.find{ResourceName}Many(query)
+  async fetch{ResourceName}List(query: Query{ResourceName}Dto) {
+    return this.{fileNameCamel}Repository.get{ResourceName}Many(query)
   }
 
   // ✅ prefix store — untuk CREATE
   async store{ResourceName}(dto: Create{ResourceName}Dto) {
-    return this.{fileNameCamel}Repository.create{ResourceName}(dto)
+    return this.{fileNameCamel}Repository.post{ResourceName}(dto)
   }
 
-  // ✅ prefix change — untuk UPDATE
+  // ✅ prefix change — untuk PATCH/UPDATE
   async change{ResourceName}(id: string, dto: Update{ResourceName}Dto) {
-    await this.get{ResourceName}(id) // guard: pastikan exists
-    return this.{fileNameCamel}Repository.update{ResourceName}(id, dto)
+    await this.fetch{ResourceName}(id) // guard: pastikan exists
+    return this.{fileNameCamel}Repository.patch{ResourceName}(id, dto)
   }
 
   // ✅ prefix remove — untuk DELETE
   async remove{ResourceName}(id: string) {
-    await this.get{ResourceName}(id) // guard: pastikan exists
+    await this.fetch{ResourceName}(id) // guard: pastikan exists
     return this.{fileNameCamel}Repository.delete{ResourceName}(id)
   }
 }
@@ -337,17 +391,17 @@ import type {
 export class {FileName}Controller {
   constructor(private readonly {fileNameCamel}Service: {FileName}Service) {}
 
-  // ✅ prefix fetch — untuk GET
+  // ✅ prefix load — untuk GET
   @Get()
   @ApiOperation({ summary: 'Get {ResourceName} list' })
-  async fetch{ResourceName}List(@Query() query: Query{ResourceName}Dto) {
-    return this.{fileNameCamel}Service.get{ResourceName}List(query)
+  async load{ResourceName}List(@Query() query: Query{ResourceName}Dto) {
+    return this.{fileNameCamel}Service.fetch{ResourceName}List(query)
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Get {ResourceName} by id' })
-  async fetch{ResourceName}(@Param('id') id: string) {
-    return this.{fileNameCamel}Service.get{ResourceName}(id)
+  async load{ResourceName}(@Param('id') id: string) {
+    return this.{fileNameCamel}Service.fetch{ResourceName}(id)
   }
 
   // ✅ prefix save — untuk POST
@@ -380,7 +434,7 @@ export class {FileName}Controller {
 
 | HTTP | Prefix | Contoh |
 |---|---|---|
-| GET | `fetch` | `fetchUsersProfile()` |
+| GET | `load` | `loadUsersProfile()` |
 | POST | `save` | `saveRegisterFile()` |
 | PUT/PATCH | `modify` | `modifyUsersProfile()` |
 | DELETE | `destroy` | `destroyUsersProfile()` |
@@ -429,9 +483,9 @@ import { {FileName}Repository } from '../repositories/{filename}.repository'
 describe('{FileName}Service', () => {
   let service: {FileName}Service
   const mockRepository = {
-    find{ResourceName}ById: jest.fn(),
-    create{ResourceName}: jest.fn(),
-    update{ResourceName}: jest.fn(),
+    get{ResourceName}ById: jest.fn(),
+    post{ResourceName}: jest.fn(),
+    patch{ResourceName}: jest.fn(),
     delete{ResourceName}: jest.fn(),
   }
 
@@ -446,15 +500,15 @@ describe('{FileName}Service', () => {
     service = module.get({FileName}Service)
   })
 
-  it('get{ResourceName} throws NotFoundException when not found', async () => {
-    mockRepository.find{ResourceName}ById.mockResolvedValue(null)
-    await expect(service.get{ResourceName}('nonexistent-id')).rejects.toThrow(NotFoundException)
+  it('fetch{ResourceName} throws NotFoundException when not found', async () => {
+    mockRepository.get{ResourceName}ById.mockResolvedValue(null)
+    await expect(service.fetch{ResourceName}('nonexistent-id')).rejects.toThrow(NotFoundException)
   })
 
   it('store{ResourceName} creates and returns data', async () => {
     const dto = { field: 'value' }
     const result = { id: '1', ...dto }
-    mockRepository.create{ResourceName}.mockResolvedValue(result)
+    mockRepository.post{ResourceName}.mockResolvedValue(result)
     expect(await service.store{ResourceName}(dto)).toEqual(result)
   })
 })
@@ -490,9 +544,9 @@ describe('{FileName}Repository', () => {
     repository = module.get({FileName}Repository)
   })
 
-  it('find{ResourceName}ById calls prisma.findUnique with correct id', async () => {
+  it('get{ResourceName}ById calls prisma.findUnique with correct id', async () => {
     mockPrisma.{resource}.findUnique.mockResolvedValue({ id: '1' })
-    await repository.find{ResourceName}ById('1')
+    await repository.get{ResourceName}ById('1')
     expect(mockPrisma.{resource}.findUnique).toHaveBeenCalledWith({ where: { id: '1' } })
   })
 })
